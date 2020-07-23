@@ -71,6 +71,10 @@ def ExportingCursorWrapper(cursor_class, alias, vendor):
                 return super().execute(*args, **kwargs)
 
         def executemany(self, query, param_list, *args, **kwargs):
+            if not hasattr(param_list, '__len__'):
+                # to cater for param_list not having len, (generator or itertools.chain for example)
+                param_list = list(param_list)
+
             execute_total.labels(alias, vendor).inc(len(param_list))
             execute_many_total.labels(alias, vendor).inc(len(param_list))
             with query_duration_seconds.labels(**labels).time(), (
